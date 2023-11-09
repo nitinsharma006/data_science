@@ -1,0 +1,684 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyMJwHZIArNWz8c4Zkvni4w0",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/nitinsharma006/data_science/blob/master/NLP/Demonetization%20Information%20Extraction\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## 1. Loading the dataset"
+      ],
+      "metadata": {
+        "id": "fzGKdLjrxYXl"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# mounting the drive\n",
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Sx2bnw9Lxkee",
+        "outputId": "22c015ee-e72b-49f5-f255-6e7afd6fca96"
+      },
+      "execution_count": 11,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Drive already mounted at /content/drive; to attempt to forcibly remount, call drive.mount(\"/content/drive\", force_remount=True).\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# extract the zip file\n",
+        "!unzip '/content/drive/MyDrive/Demonatization_tweets-200904-205335.zip'"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "rNyzwG7SxtkI",
+        "outputId": "6e5f1a51-1ccc-47c4-d158-4f6bb86e5b80"
+      },
+      "execution_count": 13,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Archive:  /content/drive/MyDrive/Demonatization_tweets-200904-205335.zip\n",
+            "replace Demonatization_tweets.csv? [y]es, [n]o, [A]ll, [N]one, [r]ename: "
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import pandas as pd\n",
+        "import spacy\n",
+        "from collections import Counter\n",
+        "import re"
+      ],
+      "metadata": {
+        "id": "_mxarSP34Rgq"
+      },
+      "execution_count": 5,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Load the SpaCy English model\n",
+        "nlp = spacy.load(\"en_core_web_sm\")"
+      ],
+      "metadata": {
+        "id": "v0kicZkj4WON"
+      },
+      "execution_count": 6,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Read the CSV file into a DataFrame\n",
+        "df = pd.read_csv(\"Demonatization_tweets.csv\",  encoding='ISO-8859-1')"
+      ],
+      "metadata": {
+        "id": "J9QkzQI44eXB"
+      },
+      "execution_count": 16,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        " ## 2. Look at the top 50 mentions in the dataset (mentions in this dataset refers to the @s)"
+      ],
+      "metadata": {
+        "id": "aU9ik2pyLy88"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Function to extract mentions from a text using SpaCy\n",
+        "def extract_mentions(text):\n",
+        "    doc = nlp(text)\n",
+        "    return [token.text for token in doc if token.text.startswith('@')]"
+      ],
+      "metadata": {
+        "id": "ekdPbaVsJgWP"
+      },
+      "execution_count": 17,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Apply the function to the 'text' column and flatten the list of mentions\n",
+        "mentions = [mention for tweet in df['text'].dropna() for mention in extract_mentions(tweet)]"
+      ],
+      "metadata": {
+        "id": "SZg_7vszJqBs"
+      },
+      "execution_count": 18,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Count the occurrences of each mention\n",
+        "mention_counts = Counter(mentions)"
+      ],
+      "metadata": {
+        "id": "WMXyi1VrLnOm"
+      },
+      "execution_count": 20,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Get the top 50 mentions\n",
+        "top_mentions = mention_counts.most_common(50)"
+      ],
+      "metadata": {
+        "id": "1yN_BJq2Lgkh"
+      },
+      "execution_count": 21,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Display the top 50 mentions\n",
+        "for mention, count in top_mentions:\n",
+        "    print(f\"{mention}: {count} times\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "0l_eyiDPLsCZ",
+        "outputId": "829ddb0b-c734-4109-aed5-06661324167c"
+      },
+      "execution_count": 22,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "@evanspiegel: 1311 times\n",
+            "@URautelaForever: 1273 times\n",
+            "@narendramodi: 1133 times\n",
+            "@gauravcsawant: 541 times\n",
+            "@ModiBharosa: 540 times\n",
+            "@DrKumarVishwas: 358 times\n",
+            "@5Forty3: 286 times\n",
+            "@rssurjewala: 284 times\n",
+            "@rahulroushan: 284 times\n",
+            "@PMOIndia: 244 times\n",
+            "@centerofright: 237 times\n",
+            "@ShashiTharoor: 225 times\n",
+            "@DasShaktikanta: 195 times\n",
+            "@steve_hanke: 179 times\n",
+            "@ashu3page: 171 times\n",
+            "@YouTube: 158 times\n",
+            "@ArvindKejriwal: 154 times\n",
+            "@kanimozhi: 152 times\n",
+            "@RoflGandhi: 151 times\n",
+            "@AskAnshul: 149 times\n",
+            "@Timcast: 147 times\n",
+            "@Atheist_Krishna: 135 times\n",
+            "@: 133 times\n",
+            "@ippatel: 116 times\n",
+            "@Joydas: 114 times\n",
+            "@jamewils: 114 times\n",
+            "@PIB_India: 113 times\n",
+            "@arunjaitley: 112 times\n",
+            "@FinMinIndia: 104 times\n",
+            "@attomeybharti: 103 times\n",
+            "@Joydeep_911: 102 times\n",
+            "@Memeghnad: 95 times\n",
+            "@PiyushGoyalOffc: 95 times\n",
+            "@DrGPradhan: 90 times\n",
+            "@dna: 85 times\n",
+            "@priyaakulkarni2: 80 times\n",
+            "@minimathur: 79 times\n",
+            "@MIB_India: 79 times\n",
+            "@arvindsubraman: 79 times\n",
+            "@Ra_THORe: 75 times\n",
+            "@pGurus1: 74 times\n",
+            "@_MiteshPatel: 73 times\n",
+            "@aartic02: 72 times\n",
+            "@aaanupriyaaa: 70 times\n",
+            "@NG_withINC: 68 times\n",
+            "@Hemant_80: 62 times\n",
+            "@jairajp: 62 times\n",
+            "@harshkkapoor: 60 times\n",
+            "@na: 59 times\n",
+            "@ShirishKunder: 56 times\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## 3. Find the top 50 most frequently used hashtags (#)"
+      ],
+      "metadata": {
+        "id": "PNtJ23oWMJav"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Function to extract hashtags from a text using SpaCy\n",
+        "def extract_hashtags(text):\n",
+        "    return [match.group(0) for match in re.finditer(r'#\\w+', text)]"
+      ],
+      "metadata": {
+        "id": "I5NAAmQoMYh0"
+      },
+      "execution_count": 23,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Apply the function to the 'text' column and flatten the list of hashtags\n",
+        "hashtags = [hashtag for tweet in df['text'].dropna() for hashtag in extract_hashtags(tweet)]"
+      ],
+      "metadata": {
+        "id": "5FcrO-MnM12B"
+      },
+      "execution_count": 24,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Count the occurrences of each hashtag\n",
+        "hashtag_counts = Counter(hashtags)"
+      ],
+      "metadata": {
+        "id": "8SFQMVwrM5Wr"
+      },
+      "execution_count": 25,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Get the top 50 hashtags\n",
+        "top_hashtags = hashtag_counts.most_common(50)"
+      ],
+      "metadata": {
+        "id": "joQYC-AwM8ps"
+      },
+      "execution_count": 26,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Display the top 50 hashtags\n",
+        "for hashtag, count in top_hashtags:\n",
+        "    print(f\"{hashtag}: {count} times\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "-OsHpXzoNBsY",
+        "outputId": "9a1e7d1a-cdd5-4fb2-e58b-8342a32aff16"
+      },
+      "execution_count": 27,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "#Demonetization: 3884 times\n",
+            "#demonetization: 3783 times\n",
+            "#DeMonetization: 920 times\n",
+            "#India: 356 times\n",
+            "#nitishkumar: 257 times\n",
+            "#demo: 174 times\n",
+            "#GLvMI: 145 times\n",
+            "#CorruptionFreeIndia: 103 times\n",
+            "#BlackMoney: 96 times\n",
+            "#Modi: 92 times\n",
+            "#VijayMallya: 86 times\n",
+            "#IndiaFightsCorruption: 79 times\n",
+            "#DEMONETIZATION: 60 times\n",
+            "#BJP: 56 times\n",
+            "#NoMoneyYaar: 53 times\n",
+            "#Demonetizat: 47 times\n",
+            "#SonuNigam: 47 times\n",
+            "#DeMonetisation: 45 times\n",
+            "#RatanTata: 44 times\n",
+            "#Insights: 44 times\n",
+            "#bulletin: 44 times\n",
+            "#boycottsnapchat: 44 times\n",
+            "#RBI: 42 times\n",
+            "#NarendraModi: 41 times\n",
+            "#LifeInsurance: 34 times\n",
+            "#demonetisation: 31 times\n",
+            "#YouTubeIsDead: 30 times\n",
+            "#NMApp: 29 times\n",
+            "#MeraDeshBadalRaha: 28 times\n",
+            "#PMModi: 26 times\n",
+            "#news: 25 times\n",
+            "#TrustBJP: 25 times\n",
+            "#Bypolls: 24 times\n",
+            "#not: 23 times\n",
+            "#YouTube: 23 times\n",
+            "#CGDTalks: 23 times\n",
+            "#IndiaKaDil: 22 times\n",
+            "#india: 22 times\n",
+            "#Hilarious: 21 times\n",
+            "#blackmoney: 20 times\n",
+            "#Hitler: 20 times\n",
+            "#WarOnCash: 20 times\n",
+            "#lifehacks: 19 times\n",
+            "#Doltiwal: 18 times\n",
+            "#JaiChandKejriwal: 18 times\n",
+            "#survey: 18 times\n",
+            "#PM: 18 times\n",
+            "#Delhi: 18 times\n",
+            "#NorthEast: 18 times\n",
+            "#ITVideo: 18 times\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## 3. Find the sentences having mentions of Prime Minister"
+      ],
+      "metadata": {
+        "id": "ejUo6PDlNGNh"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Function to find sentences mentioning \"Prime Minister\" using SpaCy\n",
+        "def find_prime_minister_mentions(text):\n",
+        "    doc = nlp(text)\n",
+        "    sentences_with_mentions = [sent.text for sent in doc.sents if 'Prime Minister' in sent.text]\n",
+        "    return sentences_with_mentions"
+      ],
+      "metadata": {
+        "id": "0Jy668eqNOa-"
+      },
+      "execution_count": 28,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Apply the function to the 'text' column and flatten the list of sentences\n",
+        "sentences_with_mentions = [sentence for tweet in df['text'].dropna() for sentence in find_prime_minister_mentions(tweet)]"
+      ],
+      "metadata": {
+        "id": "nKfEPOxpNgkP"
+      },
+      "execution_count": 29,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Display the sentences with mentions of \"Prime Minister\"\n",
+        "for sentence in sentences_with_mentions:\n",
+        "    print(sentence)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "YE69I1YOONFu",
+        "outputId": "53064430-b176-48f1-d80d-1ec432f1487d"
+      },
+      "execution_count": 30,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Open message of #Indian #Child to Prime Minister #Modi\r\n",
+            "@NarendraModi #Demonetization #Demonetisation https://t.co/Xkf8IJNoUC\n",
+            "I'm not particularly against #demonetization, but those survey results the Prime Minister shared are such b.s! Heights of fudging polls!\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "By not attending Parliament after #Demonetization Prime Minister is not setting a good precedent ..afterall he is... https://t.co/NYtueLtqRJ\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "Thank you Prime Minister @PMOIndia \r\n",
+            "\r\n",
+            "\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "Acharya Devvrat calls on Prime Minister, lauds #demonetization https://t.co/grznkdmdoA\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "first Prime Minister to single handedly bring about a recession.\n",
+            "Dear @evanspiegel,\r\n",
+            "India is so rich that Our Prime Minister<U+200B> Modi had to implement demonetization to find out who... https://t.co/2zku4Eg7bJ\n",
+            "The Prime Minister must answer\n",
+            "The Prime Minister must answer\n",
+            "When our Honorable Prime Minister announced the demonetization exercise, we all saw very interesting facets of... https://t.co/M0oen2tYxJ\n",
+            "RT @RealHistoryPic: Prime Minister of India showing the list of people  benefited from the demonetization, and Voted \"Yes\" on his App.(2016\n",
+            "The Prime Minister must answer\n",
+            "People who criticized #demonetization now's the time to say \" We apologize to Prime Minister @narendramodi \" https://t.co/F9n4Ims9n3\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## 3. Use the prepositions to extract relevant information from the tweets"
+      ],
+      "metadata": {
+        "id": "-BL4v399OaW8"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Function to find relevant information using prepositions in sentences mentioning \"Prime Minister\"\n",
+        "def extract_information_with_prepositions(text):\n",
+        "    doc = nlp(text)\n",
+        "    relevant_information = []\n",
+        "    for sent in doc.sents:\n",
+        "        if 'Prime Minister' in sent.text:\n",
+        "            for token in sent:\n",
+        "                if token.pos_ == 'ADP':  # Check if the token is a preposition\n",
+        "                    relevant_information.append((token.text, sent.text))\n",
+        "    return relevant_information"
+      ],
+      "metadata": {
+        "id": "J3uPEfDXOjuK"
+      },
+      "execution_count": 31,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Apply the function to the 'text' column and display relevant information\n",
+        "for tweet in df['text'].dropna():\n",
+        "    information_with_prepositions = extract_information_with_prepositions(tweet)\n",
+        "    for preposition, sentence in information_with_prepositions:\n",
+        "        print(f\"Preposition: {preposition}, Sentence: {sentence}\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "OzYeY-tjO0dK",
+        "outputId": "170c1974-c572-48e7-f03c-387246b85e7e"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Preposition: of, Sentence: Open message of #Indian #Child to Prime Minister #Modi\r\n",
+            "@NarendraModi #Demonetization #Demonetisation https://t.co/Xkf8IJNoUC\n",
+            "Preposition: to, Sentence: Open message of #Indian #Child to Prime Minister #Modi\r\n",
+            "@NarendraModi #Demonetization #Demonetisation https://t.co/Xkf8IJNoUC\n",
+            "Preposition: against, Sentence: I'm not particularly against #demonetization, but those survey results the Prime Minister shared are such b.s! Heights of fudging polls!\n",
+            "Preposition: of, Sentence: I'm not particularly against #demonetization, but those survey results the Prime Minister shared are such b.s! Heights of fudging polls!\n",
+            "Preposition: By, Sentence: By not attending Parliament after #Demonetization Prime Minister is not setting a good precedent ..afterall he is... https://t.co/NYtueLtqRJ\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: on, Sentence: Acharya Devvrat calls on Prime Minister, lauds #demonetization https://t.co/grznkdmdoA\n",
+            "Preposition: #, Sentence: Acharya Devvrat calls on Prime Minister, lauds #demonetization https://t.co/grznkdmdoA\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: about, Sentence: first Prime Minister to single handedly bring about a recession.\n",
+            "Preposition: out, Sentence: Dear @evanspiegel,\n",
+            "India is so rich that Our Prime Minister<U+200B> Modi had to implement demonetization to find out who... https://t.co/2zku4Eg7bJ\n",
+            "Preposition: of, Sentence: When our Honorable Prime Minister announced the demonetization exercise, we all saw very interesting facets of... https://t.co/M0oen2tYxJ\n",
+            "Preposition: of, Sentence: RT @RealHistoryPic: Prime Minister of India showing the list of people  benefited from the demonetization, and Voted \"Yes\" on his App.(2016\n",
+            "Preposition: of, Sentence: RT @RealHistoryPic: Prime Minister of India showing the list of people  benefited from the demonetization, and Voted \"Yes\" on his App.(2016\n",
+            "Preposition: from, Sentence: RT @RealHistoryPic: Prime Minister of India showing the list of people  benefited from the demonetization, and Voted \"Yes\" on his App.(2016\n",
+            "Preposition: on, Sentence: RT @RealHistoryPic: Prime Minister of India showing the list of people  benefited from the demonetization, and Voted \"Yes\" on his App.(2016\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
